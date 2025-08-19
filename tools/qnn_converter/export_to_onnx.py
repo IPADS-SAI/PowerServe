@@ -169,6 +169,7 @@ class LlamaModelChunk(ExportableModule, KVCache):
         ffn_hidden_dim: int,
         rms_norm_eps: float,
         has_qkv_bias: bool,
+        has_qk_norm: bool,
         use_drelu: bool,
         cache_size: int,
         n_fp16_heads: int | dict[int, int],
@@ -214,6 +215,7 @@ class LlamaModelChunk(ExportableModule, KVCache):
                     ffn_hidden_dim=ffn_hidden_dim,
                     rms_norm_eps=rms_norm_eps,
                     has_qkv_bias=has_qkv_bias,
+                    has_qk_norm=has_qk_norm,
                     use_drelu=use_drelu,
                     fp16_head_ids=attn_head_ids,
                     fp16_neuron_ids=ffn_neuron_ids,
@@ -483,6 +485,10 @@ class LlamaModel(nn.Module):
 
         n_tokens = min(input_ids.nelement(), self.graph_params.cache_size - self.kv_cache_position, max_n_tokens)
         n_tokens -= n_tokens % batch_size
+        # if n_tokens>batch_size:
+        #     n_tokens -= n_tokens % batch_size
+        # else:
+        #     n_tokens = batch_size
         print(f"Prompt: {len(input_ids)} tokens, truncated to {n_tokens} tokens")
 
         for i in tqdm(range(0, n_tokens, batch_size)):
@@ -650,13 +656,14 @@ class OutputEmbeddingExporter:
 
         # RMSNorm: FP32
         for node in graph.initializer:
-            if match(node, "layers\.[0-9]+\.(attn|ffn)\.norm\.weight"):
+            # print(node)
+            if match(node, "layers\.[0-9]+\.(attn|ffn)\.(q_|k_)?norm\.weight"):
                 encode_param(node, 32, "float")
         for node in graph.node:
             # print(node)
-            if match(node, "/layers\.[0-9]+/(attn|ffn)/norm.*"):
+            if match(node, "/layers\.[0-9]+/(attn|ffn)/(q_|k_)?norm.*"):
                 encode_output(node, 32)
-            elif match(node, "/norm.*"):
+            elif match(node, "/(q_|k_)?norm.*"):
                 encode_output(node, 32)
 
         if self.use_fp16:
@@ -858,10 +865,10 @@ class ModelChunkExporter:
 
         # RMSNorm: FP32
         for node in graph.initializer:
-            if match(node, "layers\.[0-9]+\.(attn|ffn)\.norm\.weight"):
+            if match(node, "layers\.[0-9]+\.(attn|ffn)\.(q_|k_)?norm\.weight"):
                 encode_param(node, 32, "float")
         for node in graph.node:
-            if match(node, "/layers\.[0-9]+/(attn|ffn)/norm.*"):
+            if match(node, "/layers\.[0-9]+/(attn|ffn)/(q_|k_)?norm.*"):
                 encode_output(node, 32)
 
         # FP16 components
@@ -956,6 +963,7 @@ model_chunks = [
         ffn_hidden_dim=model_params.ffn_hidden_dim,
         rms_norm_eps=model_params.rms_norm_eps,
         has_qkv_bias=model_params.has_qkv_bias,
+        has_qk_norm=model_params.has_qk_norm,
         use_drelu=model_params.use_drelu,
         cache_size=graph_params.cache_size,
         n_fp16_heads=model_params.n_fp16_heads,

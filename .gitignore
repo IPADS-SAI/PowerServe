@@ -14,3 +14,5 @@ Pipfile
 tools/llama_tf_to_qnn_bin
 tools/process_image
 *.log
+activation_stats
+tmp*

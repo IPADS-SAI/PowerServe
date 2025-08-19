@@ -40,7 +40,8 @@ public:
         const TensorNode *v_cache,
         const std::vector<int> &pos,
         const CausalAttentionMask &mask,
-        bool is_need_bias = false
+        bool is_need_bias = false,
+        bool is_need_qk_norm = false
     ) override;
 };
 

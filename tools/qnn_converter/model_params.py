@@ -2,6 +2,7 @@ class ModelParams:
     has_qkv_bias: bool
     use_drelu: bool
     tie_embedding: bool
+    has_qk_norm: bool # qwen3
 
     n_layers: int
     vocab_size: int
@@ -35,6 +36,7 @@ class Llama3_1_8B_Params(ModelParams):
     has_qkv_bias = False
     use_drelu = False
     tie_embedding = False
+    has_qk_norm = False
 
     n_layers = 32
     vocab_size = 128256
@@ -59,6 +61,7 @@ class Llama3_2_1B_Params(ModelParams):
     has_qkv_bias = False
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 16
     vocab_size = 128256
@@ -83,6 +86,7 @@ class Llama2_7B_Params(ModelParams):
     has_qkv_bias = False
     use_drelu = False
     tie_embedding = False
+    has_qk_norm = False
 
     n_layers = 32
     vocab_size = 32000
@@ -107,6 +111,7 @@ class Mistral_7B_Params(ModelParams):
     has_qkv_bias = False
     use_drelu = True
     tie_embedding = False
+    has_qk_norm = False
 
     n_layers = 32
     vocab_size = 32000
@@ -131,6 +136,7 @@ class Qwen2_5_7B_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = False
+    has_qk_norm = False
 
     n_layers = 28
     vocab_size = 152064
@@ -155,6 +161,7 @@ class Qwen2_5_7B_Spinquant_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = False
+    has_qk_norm = False
 
     n_layers = 28
     vocab_size = 152064
@@ -179,6 +186,7 @@ class Qwen2_5_500M_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 24
     vocab_size = 151936
@@ -203,6 +211,7 @@ class Qwen2_5_500M_Spinquant_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 24
     vocab_size = 151936
@@ -222,11 +231,37 @@ class Qwen2_5_500M_Spinquant_Params(ModelParams):
     n_fp16_heads = 0
     n_fp16_neurons = 0
 
+class Qwen3_1dot7B_Params(ModelParams):
+    has_qkv_bias = False
+    use_drelu = False
+    tie_embedding = True
+    has_qk_norm = True
+
+    n_layers = 28
+    vocab_size = 151936
+    ffn_hidden_dim = 6144
+    head_dim = 128
+    n_heads = 16
+    n_kv_heads = 8
+
+    rope_theta = 1e6
+    rms_norm_eps = 1e-6
+    attention_mask_value = -5e4
+
+
+    fp16_attention_layers = []
+    fp16_ffn_layers = []
+    fp16_rope = True
+    fp16_qkv_heads = True
+    n_fp16_heads = 0
+    n_fp16_neurons = 0
+
 
 class SmallThinker_3B_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 36
     vocab_size = 151936
@@ -254,6 +289,7 @@ class SmallThinker_500M_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 24
     vocab_size = 151936
@@ -278,6 +314,7 @@ class SmallThinker_3B_Spinquant_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 36
     vocab_size = 151936
@@ -302,6 +339,7 @@ class SmallThinker_500M_Spinquant_Params(ModelParams):
     has_qkv_bias = True
     use_drelu = False
     tie_embedding = True
+    has_qk_norm = False
 
     n_layers = 24
     vocab_size = 151936
@@ -329,6 +367,7 @@ model_map: dict[str, ModelParams] = {
     "qwen2.5_7b_spin": Qwen2_5_7B_Spinquant_Params,
     "qwen2.5_0.5b": Qwen2_5_500M_Params,
     "qwen2.5_0.5b_spin": Qwen2_5_500M_Spinquant_Params,
+    "qwen3_1.7b": Qwen3_1dot7B_Params,
     "llama3_1_8b": Llama3_1_8B_Params,
     "llama3_2_1b": Llama3_2_1B_Params,
     "llama2_7b": Llama2_7B_Params,

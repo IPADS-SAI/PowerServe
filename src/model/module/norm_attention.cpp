@@ -31,7 +31,8 @@ TensorNode *NormAttention::build(
     const TensorNode *v_cache,
     const std::vector<int> &pos,
     const CausalAttentionMask &mask,
-    bool is_need_bias
+    bool is_need_bias,
+    bool is_need_qk_norm // for qwen3
 ) {
     auto batch_size = pos.size();
     auto head_size  = m_config.head_size;
@@ -72,8 +73,22 @@ TensorNode *NormAttention::build(
     auto q_view = g.view_tensor(q, {head_size, n_head, q->m_shape[1], q->m_shape[2]});
     // (head_size, n_kv_heads, bs, 1)
     auto k_view = g.view_tensor(k, {head_size, n_head_kv, k->m_shape[1], k->m_shape[2]});
-    auto rope_q = g.rope(q_view, pos, m_config.rope_config); // (head_size, n_heads, bs, 1)
-    auto rope_k = g.rope(k_view, pos, m_config.rope_config); // (head_size, n_kv_heads, bs, 1)
+
+    TensorNode* rope_q;
+    TensorNode* rope_k;
+    if(is_need_qk_norm){
+        // for qwen3
+        auto q_norm_w = g.add_tensor(m_weights->lw[L].attn_q_norm);
+        auto q_norm   = g.rms_norm(q_view, q_norm_w, m_config.norm_eps);
+        auto k_norm_w = g.add_tensor(m_weights->lw[L].attn_k_norm);
+        auto k_norm   = g.rms_norm(k_view, k_norm_w, m_config.norm_eps);
+        rope_q = g.rope(q_norm, pos, m_config.rope_config); // (head_size, n_heads, bs, 1)
+        rope_k = g.rope(k_norm, pos, m_config.rope_config); // (head_size, n_kv_heads, bs, 1)
+    }else{
+        rope_q = g.rope(q_view, pos, m_config.rope_config); // (head_size, n_heads, bs, 1)
+        rope_k = g.rope(k_view, pos, m_config.rope_config); // (head_size, n_kv_heads, bs, 1)
+    }
+
 
     // store kv
     {

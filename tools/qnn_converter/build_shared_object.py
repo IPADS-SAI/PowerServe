@@ -95,7 +95,7 @@ def convert_model():
 
         if info["preserve_dtype"]:
             cmd_args += ["--preserve_io datatype", "'" + name + "'"]
-
+    # print(' '.join([str(e) for e in cmd_args]))
     run(cmd_args)
 
 
@@ -116,7 +116,7 @@ def generate_library():
         output_folder,
         "--debug"
     ]
-
+    print(' '.join([str(e) for e in cmd_args]))
     run(cmd_args)
 
 

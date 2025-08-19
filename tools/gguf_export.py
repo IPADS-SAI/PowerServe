@@ -72,12 +72,16 @@ def export_executable(out_path: Path, plats: Set[support_plat_l]) -> Path:
         if plat == "aarch64":
             execute_command([
                 "cmake",
+                "-DCMAKE_BUILD_TYPE=Release",
                 "-DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake",
                 "-DANDROID_ABI=arm64-v8a",
-                "-DANDROID_PLATFORM=android-34",
-                "-DBUILD_SHARED_LIBS=OFF",
+                "-DANDROID_PLATFORM=android-35",
+                # "-DBUILD_SHARED_LIBS=OFF",
                 "-DGGML_OPENMP=OFF",
                 "-DPOWERSERVE_WITH_QNN=ON",
+                "-DPOWERSERVE_ENABLE_HTPRPCPOLL=ON",
+                "-DPOWERSERVE_ENABLE_HMXPWRCFG=ON",
+                "-DPOWERSERVE_USE_DUMMY=ON",
                 "-S",
                 root_folder,
                 "-B",

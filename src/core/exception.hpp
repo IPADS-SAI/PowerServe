@@ -113,7 +113,7 @@ inline void print_backtrace_symbols() {
 }
 #endif
 
-#if (defined(__linux__) || defined(__ANDROID__)) && !defined(__OHOS__)
+#if (defined(__linux__) && !defined(__ANDROID__)) && !defined(__OHOS__)
 inline void print_backtrace() {
     char attach[32];
     snprintf(attach, sizeof(attach), "attach %d", getpid());

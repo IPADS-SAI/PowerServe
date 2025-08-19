@@ -212,6 +212,7 @@ class LlamaAttention(nn.Module):
         n_kv_heads: int,
         context_size: int,
         has_qkv_bias: bool,
+        has_qk_norm: bool,
         rms_norm_eps: float,
         fp16_head_ids: list[int],
         device: torch.device,
@@ -222,6 +223,7 @@ class LlamaAttention(nn.Module):
         self.n_heads = n_heads
         self.n_kv_heads = n_kv_heads
         self.has_qkv_bias = has_qkv_bias
+        self.has_qk_norm = has_qk_norm
         self.device = device
 
         self.fp16_head_ids = sorted(fp16_head_ids)
@@ -237,7 +239,9 @@ class LlamaAttention(nn.Module):
         self.core = LlamaAttentionCore(
             n_kv_heads=n_kv_heads, group_size=self.group_size, context_size=context_size, device=device
         )
-
+        if self.has_qk_norm:
+            self.q_norm = LlamaRMSNorm(embed_dim=self.head_dim, eps=rms_norm_eps, device=device)
+            self.k_norm = LlamaRMSNorm(embed_dim=self.head_dim, eps=rms_norm_eps, device=device)
         self.fp16_q_heads = nn.ModuleList()
         self.int4_q_heads = nn.ModuleList()
         self.q_heads = []
@@ -296,6 +300,10 @@ class LlamaAttention(nn.Module):
     def load_weights(self, loader: ModelLoader):
         loader.load(self.norm, f"model.layers.{self.layer_id}.input_layernorm.weight")
 
+        if self.has_qk_norm:
+            loader.load(self.q_norm, f"model.layers.{self.layer_id}.self_attn.q_norm.weight")
+            loader.load(self.k_norm, f"model.layers.{self.layer_id}.self_attn.k_norm.weight")
+
         wq = torch.empty(self.embed_dim, self.embed_dim, dtype=torch.float32, device=self.device)
         loader.load(wq, f"model.layers.{self.layer_id}.self_attn.q_proj.weight")
         if self.has_qkv_bias:
@@ -348,8 +356,12 @@ class LlamaAttention(nn.Module):
         """Returns the attention output, keys and values of input x"""
 
         attn_input = self.norm(x)
-        queries = [self.rope(q_head(attn_input), rope_embeds) for q_head in self.q_heads]
-        keys = [self.rope(k_head(attn_input), rope_embeds) for k_head in self.k_heads]
+        if self.has_qk_norm:
+            queries = [self.rope(self.q_norm(q_head(attn_input)), rope_embeds) for q_head in self.q_heads]
+            keys = [self.rope(self.k_norm(k_head(attn_input)), rope_embeds) for k_head in self.k_heads]
+        else:
+            queries = [self.rope(q_head(attn_input), rope_embeds) for q_head in self.q_heads]
+            keys = [self.rope(k_head(attn_input), rope_embeds) for k_head in self.k_heads]
         values = [v_head(attn_input) for v_head in self.v_heads]
 
         head_outs, scaled_keys, scaled_values = self.core(
@@ -509,6 +521,7 @@ class LlamaTransformer(nn.Module):
         ffn_hidden_dim: int,
         rms_norm_eps: float,
         has_qkv_bias: bool,
+        has_qk_norm: bool,
         use_drelu: bool,
         fp16_head_ids: list[int],
         fp16_neuron_ids: list[int],
@@ -524,6 +537,7 @@ class LlamaTransformer(nn.Module):
             n_kv_heads=n_kv_heads,
             context_size=context_size,
             has_qkv_bias=has_qkv_bias,
+            has_qk_norm=has_qk_norm,
             rms_norm_eps=rms_norm_eps,
             fp16_head_ids=fp16_head_ids,
             device=device,

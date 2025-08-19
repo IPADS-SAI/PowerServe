@@ -86,6 +86,7 @@ def main(args):
             --artifact-name {args.artifact_name} \
             --graph-names batch_{i}
         """
+        print(generate_so_command)
         run_shell_command(generate_so_command)
 
         if args.clear_build_files:

@@ -17,6 +17,7 @@
 #include "model/internvl/internvl_model.hpp"
 #include "model/llama/llama_model.hpp"
 #include "model/qwen2/qwen2_model.hpp"
+#include "model/qwen3/qwen3_model.hpp"
 
 namespace powerserve {
 
@@ -32,6 +33,8 @@ auto load_model(const Path &model_dir) -> std::shared_ptr<Model> {
         out_model = std::make_shared<Qwen2Model>(weight_path, out_config);
     } else if (arch == "internvl") {
         out_model = std::make_shared<InternVL>(weight_path, out_config);
+    } else if (arch == "qwen3") {
+        out_model = std::make_shared<Qwen3Model>(weight_path, out_config);
     } else {
         POWERSERVE_ABORT("unknown model type: {}", arch);
     }

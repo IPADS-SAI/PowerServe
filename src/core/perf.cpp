@@ -20,6 +20,7 @@
 #include <fstream>
 #include <string>
 #include <string_view>
+#include <unistd.h>
 
 namespace powerserve {
 
@@ -81,7 +82,8 @@ MemPerfResult perf_get_mem_result() {
     size_t pages, resident, shared, text, lib, data, dt;
     sscanf(line.c_str(), "%zu %zu %zu %zu %zu %zu %zu", &pages, &resident, &shared, &text, &lib, &data, &dt);
 
-    const long page_size = sysconf(_SC_PAGESIZE);
+    // const long page_size = sysconf(_SC_PAGESIZE);
+    const long page_size = getpagesize();
     const size_t rss     = resident * page_size;
     const size_t vms     = pages * page_size;
 

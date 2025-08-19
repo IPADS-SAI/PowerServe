@@ -30,6 +30,9 @@ public:
     Tensor attn_k;      // "blk.$.attn_k.weight" (layer, dim, n_kv_heads * head_size)
     Tensor attn_v;      // "blk.$.attn_v.weight" (layer, dim, n_kv_heads * head_size)
     Tensor attn_output; // "blk.$.attn_output.weight" (layer, n_heads * head_size, dim)
+    // used for qwen3
+    Tensor attn_q_norm; // "blk.$.attn_q_norm.weight" (layer, head_size)
+    Tensor attn_k_norm; // "blk.$.attn_k_norm.weight" (layer, head_size)
 
     Tensor ffn_gate; // "blk.$.ffn_gate.weight" (layer, dim, hidden_dim)
     Tensor ffn_up;   // "blk.$.ffn_up.weight" (layer, dim, hidden_dim)
