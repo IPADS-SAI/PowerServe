@@ -163,6 +163,7 @@ class LlamaModelChunk(ExportableModule, KVCache):
         start_layer_id: int,
         end_layer_id: int,
         embed_dim: int,
+        head_dim: int,
         n_heads: int,
         n_kv_heads: int,
         context_size: int,
@@ -209,6 +210,7 @@ class LlamaModelChunk(ExportableModule, KVCache):
                 LlamaTransformer(
                     layer_id=layer_id,
                     embed_dim=embed_dim,
+                    head_dim=head_dim,
                     n_heads=n_heads,
                     n_kv_heads=n_kv_heads,
                     context_size=context_size,
@@ -227,7 +229,7 @@ class LlamaModelChunk(ExportableModule, KVCache):
             start_layer_id=start_layer_id,
             end_layer_id=end_layer_id,
             n_kv_heads=n_kv_heads,
-            head_dim=(embed_dim // n_heads),
+            head_dim=head_dim if head_dim else (embed_dim // n_heads),
             cache_size=cache_size,
         )
 
@@ -510,6 +512,7 @@ class LlamaModel(nn.Module):
                 "embed_dim": self.model_params.embed_dim,
                 "ffn_hidden_dim": self.model_params.ffn_hidden_dim,
                 "head_dim": self.model_params.head_dim,
+                "n_heads": self.model_params.n_heads,
                 "n_kv_heads": self.model_params.n_kv_heads,
                 "rope_theta": self.model_params.rope_theta,
                 "rms_norm_eps": self.model_params.rms_norm_eps,
@@ -957,6 +960,7 @@ model_chunks = [
         start_layer_id=i,
         end_layer_id=(i + n_layers_per_model_chunk),
         embed_dim=model_params.embed_dim,
+        head_dim=model_params.head_dim,
         n_heads=model_params.n_heads,
         n_kv_heads=model_params.n_kv_heads,
         context_size=graph_params.context_size,
@@ -980,7 +984,7 @@ model = LlamaModel(
 
 print("Loading model weights...")
 model.load_weights()
-
+print(model)
 if args.system_prompt_file is not None:
     with open(args.system_prompt_file, "r") as f:
         system_prompt = f.read()

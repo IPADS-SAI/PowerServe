@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import requests
+from datetime import datetime
 
 
 CHOICES = ["A", "B", "C", "D"]
@@ -83,6 +84,8 @@ if __name__ == "__main__":
         [f.split("_test.csv")[0] for f in os.listdir(test_dataset) if "_test.csv" in f],
         reverse=False,
     )
+    all_records = []
+    save_json = f"mmlu_test_{str(model).replace('/','_')}_total_{args.scale_factor*57}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     for subject in subjects:
         print(subject)
         # if 'high_school_biology' not in subject:
@@ -94,90 +97,109 @@ if __name__ == "__main__":
         answers = CHOICES[: data_df.shape[1] - 2]
 
         save = dict()
-        with open("./" + subject + "_test.json", "a", encoding="utf-8") as fw:
-            cnt = 0
-            for i in range(args.scale_factor):
-                # for i in range(data_df.shape[0]):
-                # get prompt and make sure it fits
-                print("===========================Question " + str(i) + "=======================================")
-                prompt_end = format_example(data_df, i, include_answer=False)
 
-                train_prompt = gen_prompt(dev_df, subject, K_SHOT)
-                prompt = (
-                    train_prompt
-                    + f"Please answer the following question as the same format in the previous {'example' if K_SHOT == 1 else 'examples'}:\n\n"
-                    + prompt_end
-                )
-                # prompt = prompt_end.strip()
+        # with open("./" + subject + "_test.json", "a", encoding="utf-8") as fw:
+        cnt = 0
+        for i in range(args.scale_factor):
+            # for i in range(data_df.shape[0]):
+            # get prompt and make sure it fits
+            print("===========================Question " + str(i) + "=======================================")
+            prompt_end = format_example(data_df, i, include_answer=False)
 
-                # if 'college biology' not in prompt:
-                #    continue
+            train_prompt = gen_prompt(dev_df, subject, K_SHOT)
+            prompt = (
+                train_prompt
+                + f"Please answer the following question as the same format in the previous {'example' if K_SHOT == 1 else 'examples'}:\n\n"
+                + prompt_end
+            )
+            # prompt = prompt_end.strip()
 
-                print("Prompt:", repr(prompt) + "\n")
+            # if 'college biology' not in prompt:
+            #    continue
 
-                # real_ans = data_df.iloc[i, 5]
-                # print(f'real_ans: {real_ans}')
-                # with open(f'prompt/{subject}_{real_ans}.txt', 'w') as f:
-                #     f.write(f'<Q> {prompt}')
+            print("Prompt:", repr(prompt) + "\n")
 
-                payload = {
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful assistant"},
-                        {"role": "user", "content": prompt},
-                    ],
-                    "n_predict": 4,
-                    "temperature": 1.0,
-                    "repeat_penalty": 1.0,
-                    "stream": False,
-                }
-                # print(payload)
-                res = requests.post(url, json=payload, headers=header)
-                json_res = json.loads(res.text)
+            # real_ans = data_df.iloc[i, 5]
+            # print(f'real_ans: {real_ans}')
+            # with open(f'prompt/{subject}_{real_ans}.txt', 'w') as f:
+            #     f.write(f'<Q> {prompt}')
 
-                res_choice = json_res["choices"][0]
-                res_message = res_choice["message"]
-                res_content = res_message["content"]
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant"},
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": 1024,
+                "temperature": 1.0,
+                "penalty_repeat": 1.0,
+                "top_k":1,
+                "stream": False,
+            }
+            # print(payload)
+            res = requests.post(url, json=payload, headers=header)
+            json_res = json.loads(res.text)
 
-                print("Response:", repr(res_content) + "\n")
+            res_choice = json_res["choices"][0]
+            res_message = res_choice["message"]
+            res_content = res_message["content"]
 
-                re_res = re.search("[A-D]", res_content.strip())
-                if re_res:
-                    save[str(cnt)] = re_res.group()
-                else:
-                    save[str(cnt)] = "X"
+            print("Response:", repr(res_content) + "\n")
 
-                llm_ans = save[str(cnt)]
-                real_ans = data_df.iloc[i, 5]
-                if llm_ans == real_ans:
-                    correct_cnt += 1
-                else:
-                    wrong_cnt += 1
-                print(
-                    llm_ans,
-                    real_ans,
-                    correct_cnt,
-                    wrong_cnt,
-                    f"{correct_cnt / (correct_cnt + wrong_cnt):.3f}",
-                )
-                print(
-                    "LLM answer "
-                    + save[str(cnt)]
-                    + "/[ "
-                    + data_df.iloc[i, 5]
-                    + "] for ["
-                    + str(cnt + 1)
-                    + "/"
-                    + str(data_df.shape[0])
-                    + "] in ["
-                    + subject
-                    + "]"
-                )
-                cnt = cnt + 1
+            # 移除 <think> 和 </think> 标签及其内容
+            cleaned_content = re.sub(r'<think>.*?</think>', '', res_content, flags=re.DOTALL).strip()
+            cleaned_content = re.sub(r'^answer:\s*', '', cleaned_content, flags=re.IGNORECASE).strip()
+            cleaned_content = re.sub(r'\[end of text\]', '', cleaned_content, flags=re.IGNORECASE).strip()
+            
+            print("Cleaned response:", repr(cleaned_content) + "\n")
 
-            json.dump(save, fw, indent=4, ensure_ascii=False)
-            fw.write("\n")
-        fw.close()
+            re_res = re.search("[A-D]", cleaned_content.strip())
+            if re_res:
+                save[str(cnt)] = re_res.group()
+            else:
+                save[str(cnt)] = "X"
+
+            llm_ans = save[str(cnt)]
+            real_ans = data_df.iloc[i, 5]
+            if llm_ans == real_ans:
+                correct_cnt += 1
+            else:
+                wrong_cnt += 1
+            print(
+                llm_ans,
+                real_ans,
+                correct_cnt,
+                wrong_cnt,
+                f"{correct_cnt / (correct_cnt + wrong_cnt):.3f}",
+            )
+            print(
+                "LLM answer "
+                + llm_ans
+                + "/[ "
+                + real_ans
+                + "] for ["
+                + str(cnt + 1)
+                + "/"
+                + str(data_df.shape[0])
+                + "] in ["
+                + subject
+                + "]"
+            )
+            cnt = cnt + 1
+            all_records.append({
+                "question": prompt,
+                "ans_text": res_content,
+                "llm_ans": llm_ans,
+                "real_ans": real_ans,
+                "id_in_subject": cnt,
+                "subject": subject,
+                "num_subject": data_df.shape[0],
+            })
+            with open(save_json, 'w', encoding='utf-8') as f:
+                json.dump(all_records, f, ensure_ascii=False, indent=2)
+        #     json.dump(save, fw, indent=4, ensure_ascii=False)
+        #     fw.write("\n")
+        # fw.close()
 
     total_cnt = wrong_cnt + correct_cnt
     print(

@@ -25,7 +25,7 @@ struct LayerWeights {
 public:
     Tensor attn_norm; // "blk.$.attn_norm.weight" (layer, dim)
     Tensor ffn_norm;  // "blk.$.ffn_norm.weight" (layer, dim)
-    // dim == n_heads * head_size
+    // dim == n_heads * head_size, but in qwen3-0.b, dim != n_heads * head_size
     Tensor attn_q;      // "blk.$.attn_q.weight" (layer, dim, n_heads * head_size)
     Tensor attn_k;      // "blk.$.attn_k.weight" (layer, dim, n_kv_heads * head_size)
     Tensor attn_v;      // "blk.$.attn_v.weight" (layer, dim, n_kv_heads * head_size)

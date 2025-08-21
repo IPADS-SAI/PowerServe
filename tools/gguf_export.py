@@ -149,9 +149,11 @@ def export_gguf(
 
     print(f">>>>>>>>>> generate config file <<<<<<<<<<")
     # TODO: use python tools replace cpp tools
-    tool_path = out_path / f"bin/{current_platform}/powerserve-config-generator"
+    # tool_path = out_path / f"bin/{current_platform}/powerserve-config-generator"
+    tool_path = "tools/convert_hf_to_gguf/powerserve-config-generator.py"
     params_file_name = "model.json"
     execute_command([
+        "python",
         tool_path,
         "--file-path",
         ggml_model_dir / f"weights.gguf",

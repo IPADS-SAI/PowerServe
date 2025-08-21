@@ -208,6 +208,7 @@ class LlamaAttention(nn.Module):
         self,
         layer_id: int,
         embed_dim: int,
+        head_dim: int,
         n_heads: int,
         n_kv_heads: int,
         context_size: int,
@@ -231,7 +232,7 @@ class LlamaAttention(nn.Module):
 
         assert embed_dim % n_heads == 0
         assert n_heads % n_kv_heads == 0
-        self.head_dim = embed_dim // n_heads
+        self.head_dim = head_dim if head_dim else embed_dim // n_heads # In qwen3-0.6b, head_dim != embed_dim // n_heads , so have to use head_dim
         self.group_size = n_heads // n_kv_heads
 
         self.norm = LlamaRMSNorm(embed_dim=embed_dim, eps=rms_norm_eps, device=device)
@@ -303,8 +304,10 @@ class LlamaAttention(nn.Module):
         if self.has_qk_norm:
             loader.load(self.q_norm, f"model.layers.{self.layer_id}.self_attn.q_norm.weight")
             loader.load(self.k_norm, f"model.layers.{self.layer_id}.self_attn.k_norm.weight")
-
-        wq = torch.empty(self.embed_dim, self.embed_dim, dtype=torch.float32, device=self.device)
+        if self.has_qk_norm:
+            wq = torch.empty(self.n_heads * self.head_dim, self.embed_dim, dtype=torch.float32, device=self.device)
+        else:
+            wq = torch.empty(self.embed_dim, self.embed_dim, dtype=torch.float32, device=self.device)
         loader.load(wq, f"model.layers.{self.layer_id}.self_attn.q_proj.weight")
         if self.has_qkv_bias:
             bq = torch.empty(self.embed_dim, dtype=torch.float32, device=self.device)
@@ -336,8 +339,11 @@ class LlamaAttention(nn.Module):
             self.v_heads[i].weight.data.copy_(wv[i * self.head_dim : (i + 1) * self.head_dim, :])
             if self.has_qkv_bias:
                 self.v_heads[i].bias.data.copy_(bv[i * self.head_dim : (i + 1) * self.head_dim])
+        if self.has_qk_norm:
+            wo = torch.empty(self.embed_dim, self.n_heads*self.head_dim, dtype=torch.float32, device=self.device)
+        else:
+            wo = torch.empty(self.embed_dim, self.embed_dim, dtype=torch.float32, device=self.device)
 
-        wo = torch.empty(self.embed_dim, self.embed_dim, dtype=torch.float32, device=self.device)
         loader.load(wo, f"model.layers.{self.layer_id}.self_attn.o_proj.weight")
         o_heads = wo.reshape(self.embed_dim, self.n_heads, self.head_dim)
         if len(self.fp16_head_ids) > 0:
@@ -515,6 +521,7 @@ class LlamaTransformer(nn.Module):
         self,
         layer_id: int,
         embed_dim: int,
+        head_dim: int,
         n_heads: int,
         n_kv_heads: int,
         context_size: int,
@@ -533,6 +540,7 @@ class LlamaTransformer(nn.Module):
         self.attn = LlamaAttention(
             layer_id=layer_id,
             embed_dim=embed_dim,
+            head_dim=head_dim,
             n_heads=n_heads,
             n_kv_heads=n_kv_heads,
             context_size=context_size,

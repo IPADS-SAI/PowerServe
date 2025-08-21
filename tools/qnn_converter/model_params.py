@@ -231,6 +231,32 @@ class Qwen2_5_500M_Spinquant_Params(ModelParams):
     n_fp16_heads = 0
     n_fp16_neurons = 0
 
+class Qwen3_600M_Params(ModelParams):
+    has_qkv_bias = False
+    use_drelu = False
+    tie_embedding = True
+    has_qk_norm = True
+    
+    embed_dim = 1024
+    n_layers = 28
+    vocab_size = 151936
+    ffn_hidden_dim = 3072
+    head_dim = 128
+    n_heads = 16
+    n_kv_heads = 8
+
+    rope_theta = 1e6
+    rms_norm_eps = 1e-6
+    attention_mask_value = -5e4
+
+
+    fp16_attention_layers = []
+    fp16_ffn_layers = []
+    fp16_rope = True
+    fp16_qkv_heads = True
+    n_fp16_heads = 0
+    n_fp16_neurons = 0
+    
 class Qwen3_1dot7B_Params(ModelParams):
     has_qkv_bias = False
     use_drelu = False
@@ -368,6 +394,7 @@ model_map: dict[str, ModelParams] = {
     "qwen2.5_0.5b": Qwen2_5_500M_Params,
     "qwen2.5_0.5b_spin": Qwen2_5_500M_Spinquant_Params,
     "qwen3_1.7b": Qwen3_1dot7B_Params,
+    "qwen3_0.6b": Qwen3_600M_Params,
     "llama3_1_8b": Llama3_1_8B_Params,
     "llama3_2_1b": Llama3_2_1B_Params,
     "llama2_7b": Llama2_7B_Params,
