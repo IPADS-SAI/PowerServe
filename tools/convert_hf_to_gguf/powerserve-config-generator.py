@@ -77,7 +77,7 @@ def collect_config(reader: GGUFReader, config: dict):
     config["n_attn_kv_heads"] = get_u32(get_arch_key("{}.attention.head_count_kv"))
     config["n_layers"] = get_u32(get_arch_key("{}.block_count"))
     config["n_ctx"] = get_u32(get_arch_key("{}.context_length"))
-    config["head_size"] = get_u32(get_arch_key("{}.attention.key_length"), default=config["embed_dim"] // config["n_attn_heads"])
+    config["head_size"] = get_u32(get_arch_key("{}.attention.key_length"), False, default=config["embed_dim"] // config["n_attn_heads"])
     config["kv_dim"] = config["head_size"] * config["n_attn_kv_heads"]
 
     # vocab_size

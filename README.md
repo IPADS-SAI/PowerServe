@@ -27,13 +27,15 @@ Here's the list of models that PowerServe supports:
 | qwen-2.5-3b | [Qwen-2.5-3B](https://huggingface.co/PowerServe/Qwen-2.5-3B-PowerServe-QNN29-8G4) | No | 8G4(8Elite) | 981.69 | 22.19 | / |
 | internlm-3-8b | [InternLM-3-8B](https://huggingface.co/PowerServe/InternLM-3-8B-PowerServe-QNN29-8G4) | No | 8G4(8Elite) | 314.80 | 7.62 | / |
 | deepseek-r1-llama-8b | [DeepSeek-R1-Distill-Llama-8B](https://huggingface.co/PowerServe/DeepSeek-R1-Distill-Llama-8B-PowerServe-QNN29-8G4/tree/main) | Yes(llama-3.2-1b) | 8G4(8Elite) | 336.37 | 10.21 | / |
+| qwen3-0.6b |  | No | 8G4(8Elite) |  |  | / |
+| qwen3-1.7b |  | No | 8G4(8Elite) | 1009.80 | 37.18 | / |
 
 We test these speeds with files in `./assets/prompts`as input prompt files. More tests on multiple datasets will be conducted in the future.
 
 ## News
 - [2025/1/14] We release PowerServe 🎉
 - [2025/4/22] Bug fixes, more debug tools, backward compatability on more Qualcomm hardwares and more QOL updates. Check the new features and improvements in the [release notes](#release-notes).
-
+- [2025/9/21] Added support for the Qwen3 series, and updated the `gguf-py` tool in `tools/convert_hf_to_gguf/gguf-py` and `tools/convert_hf_to_gguf/powerserve-config-generator.py` to replace the original C++ tools (config-generator).
 ## Table of Contents
 
 1. [End to end deployment](#end-to-end)
@@ -292,7 +294,7 @@ export LD_LIBRARY_PATH=/system/lib64:/vendor/lib64 && ./models/llama3.1-8b-instr
 ## Release Notes
 
 [2025/4/22] Bug fixes, more debug tools, backward compatability and more QOL updates.
-
+[2025/9/21] Added support for the Qwen3 series, and updated the `gguf-py` tool in `tools/convert_hf_to_gguf/gguf-py` and `tools/convert_hf_to_gguf/powerserve-config-generator.py` to replace the original C++ tools (config-generator).
 ### Bug fixes
 
 - Fixed a bug that caused the GGUF model loading failure due to the 32-bit system `size_t` overflow.
