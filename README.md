@@ -35,7 +35,8 @@ We test these speeds with files in `./assets/prompts`as input prompt files. More
 ## News
 - [2025/1/14] We release PowerServe 🎉
 - [2025/4/22] Bug fixes, more debug tools, backward compatability on more Qualcomm hardwares and more QOL updates. Check the new features and improvements in the [release notes](#release-notes).
-- [2025/9/21] Added support for the Qwen3 series, and updated the `gguf-py` tool in `tools/convert_hf_to_gguf/gguf-py` and `tools/convert_hf_to_gguf/powerserve-config-generator.py` to replace the original C++ tools (config-generator).
+- [2025/9/21] Added support for the Qwen3 series.
+
 ## Table of Contents
 
 1. [End to end deployment](#end-to-end)
@@ -322,3 +323,4 @@ export LD_LIBRARY_PATH=/system/lib64:/vendor/lib64 && ./models/llama3.1-8b-instr
 - Added spinquant models' export parameters
 - Specified hardware requirements to convert qnn models
 - Added `POWERSERVE_USE_DUMMY` flag to let users decide whether to use dummy buffers to help allocate NPU buffers, should be enabled on SM8650/8750 and disabled on SA8295.
+- Updated the `gguf-py` tool in `tools/convert_hf_to_gguf/gguf-py` and added `tools/convert_hf_to_gguf/powerserve-config-generator.py` to replace the original C++ tool (config-generator).
